@@ -1,0 +1,10 @@
+// plan(() => {
+//     while(location != "l3") {
+//       pi(l, locations);
+//       GoTo(l);
+//     }
+//   });
+
+GoTo({location: "l2"});
+GoTo({location: "l3"});
+GoTo({location: "l4"});

@@ -1,0 +1,22 @@
+{
+  "name": "golog",
+  "version": "0.0.1",
+  "description": "A GOLOG interpreter in JavaScript",
+  "main": "main.js",
+  "dependencies": {
+    "acorn": "^5.1.1",
+    "escodegen": "^1.9.0",
+    "underscore": "^1.8.3"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "golog",
+    "artificial",
+    "intelligence"
+  ],
+  "author": "Christian Fritz",
+  "license": "MIT"
+}
