@@ -65,6 +65,10 @@ const final = {
         return true;
       }
     }
+  },
+
+  BinaryExpression(program, state) {
+    return eval(escodegen.generate(program));
   }
 }
 
@@ -78,7 +82,7 @@ const trans_one = (program, state) => {
   if (!trans[program.type]) {
     throw new Error("TRANS: no case defined for " + program.type);
   }
-  // console.log("TRANS_ONE", program);
+  console.log("TRANS_ONE", program);
   return trans[program.type](program, state);
 }
 
@@ -90,6 +94,11 @@ const trans = {
   /** program is a block statement, e.g., the consequent of an If */
   BlockStatement(program, state) {
     const first = program.body.shift();
+
+    if (isFinal(first, state)) {
+      return trans_one(program, state);
+    }
+
     // console.log("BlockStatement next:", first);
     const result = trans_one(first, state);
 
@@ -106,9 +115,11 @@ const trans = {
   },
 
   ExpressionStatement(program, state) {
+    console.log("EXPRESSION", program.expression);
     return trans[program.expression.type](program, state);
   },
 
+  /** an invocation */
   CallExpression(program, state) {
     // console.log("CALL", program);
     // reconstruct the action and instantiate
@@ -122,6 +133,7 @@ const trans = {
     }
   },
 
+  /** if-then-else */
   IfStatement(program, state) {
     const condition = eval(escodegen.generate(program.test));
     if (condition) {
@@ -133,6 +145,16 @@ const trans = {
         // no else specified
         return [{ program: null, state }];
       }
+    }
+  },
+
+  /** a test */
+  BinaryExpression(program, state) {
+    const condition = eval(escodegen.generate(program));
+    if (condition) {
+      return [{ program: null, state }];
+    } else {
+      return [];
     }
   }
 }

@@ -10,3 +10,4 @@ if (state.location == "l1") {
 } else {
   GoTo({location: "l3"});
 }
+state.location != 'l2';
