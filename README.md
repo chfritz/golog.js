@@ -6,12 +6,21 @@ Specifically, we use the transition semantics of [ConGolog](http://bibbase.org/n
 
 To learn more about Golog, please visit the [University of Toronto's Cognitive Robotics Groups' website](http://www.cs.toronto.edu/cogrobo/main/systems/index.html).
 
+Sample execution:
+```sh
+node main.js logistics.golog
+```
+
 ### Technical notes
 
 This may only be comprehensible to those who already know Golog.
 
 - We currently do *not* use declarative conditions (an in particular we do *not* use the Situation Calculus). The state of the world is simply represented using state variables with associated values, and conditions are actual Boolean JavaScript functions that take the state as the argument.
 - Similarly, actions are executable javascript functions that change the state.
-
+- The interpreter switches evaluation context from interpreted Golog to native
+javascript in several places. This is to be pragmatic about the amount of
+interpretation necessary. This is made possible by using JS syntax for programs.
+All programs are syntactically correct JS programs as well -- but not executable
+as such, because GOLOG requires a different execution semantics than javascript.
 
 **This is work in progress and nowhere nearly finished.**

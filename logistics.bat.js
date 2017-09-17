@@ -44,11 +44,11 @@ function road(a, b) {
   );
 }
 
-const locations = ["l1", "l2", "l3"];
-
-const initialState = {
-  location: "l1"
-}
+// const locations = ["l1", "l2", "l3", "l4"];
+//
+// const initialState = {
+//   location: "l1"
+// }
 
 // --------------------------------------------------------------------------
 // ---- Actions
@@ -59,7 +59,7 @@ class Action {
   }
 
   execute() {
-    console.log("RUNNING", this.constructor.name, this._args);
+    console.log("EXECUTING", this.constructor.name, this._args);
   }
 }
 

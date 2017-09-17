@@ -15,8 +15,9 @@ const actions = require('./logistics.bat.js'); // TODO: make this unnecessary
  * and resulting state
 */
 function run(program, state) {
+  // console.log("RUN", program);
   if (!isFinal(program, state)) {
-    const result = trans[program.type](program, state);
+    const result = trans_one(program, state);
     // console.log(result);
     if (result.length == 0) {
       return {success: false, state};
@@ -43,33 +44,55 @@ function isFinal(program, state) {
 }
 
 const final = {
-  Program(program, state) {
+  BlockStatement(program, state) {
+    // console.log("final BlockStatement", program, state);
     return (program.body.length == 0
       || _.every(program.body, (p) => {
-          isFinal(p, state)
+          return isFinal(p, state)
           })
       );
+  },
+
+  IfStatement(program, state) {
+    const condition = eval(escodegen.generate(program.test));
+    if (condition) {
+      return isFinal(program.consequent, state);
+    } else {
+      if (program.alternate) {
+        return isFinal(program.alternate, state);
+      } else {
+        // no else specified
+        return true;
+      }
+    }
   }
 }
 
+// synonyms
+final.Program = final.BlockStatement;
+
 // ------------------------------------------------------------------------
+
+/** perform one trans step */
+const trans_one = (program, state) => {
+  if (!trans[program.type]) {
+    throw new Error("TRANS: no case defined for " + program.type);
+  }
+  // console.log("TRANS_ONE", program);
+  return trans[program.type](program, state);
+}
 
 /** Transition functions for each programming construct.
   @return a list of possible future programs-state tuples.
 */
 const trans = {
-  /** program is a Program */
-  Program(program, state) {
-    // console.log("PROGRAM", program);
+
+  /** program is a block statement, e.g., the consequent of an If */
+  BlockStatement(program, state) {
     const first = program.body.shift();
-    const result = trans[first.type](first, state);
-    // if (result.program) {
-    //   program.body.unshift(result[0].program); // online mode
-    // }
-    // return [{
-    //   program,
-    //   state: result[0].state // online mode
-    // }];
+    // console.log("BlockStatement next:", first);
+    const result = trans_one(first, state);
+
     return _.map(result, (tuple) => {
         const programClone = program;
         if (tuple.program != null) {
@@ -88,12 +111,7 @@ const trans = {
 
   CallExpression(program, state) {
     // console.log("CALL", program);
-    // reconstruct the action call
-    // const actionFn = eval('actions.' + program.expression.callee.name);
-    // const args = _.map(program.expression.arguments,
-    //   (arg) => { return arg.value; });
-    // const action = new actionFn(...args);
-
+    // reconstruct the action and instantiate
     const action = eval("new actions." + escodegen.generate(program));
 
     if (action.isPossible(state)) {
@@ -102,8 +120,25 @@ const trans = {
     } else {
       return []; // i.e., no transition possible
     }
+  },
+
+  IfStatement(program, state) {
+    const condition = eval(escodegen.generate(program.test));
+    if (condition) {
+      return trans_one(program.consequent, state);
+    } else {
+      if (program.alternate) {
+        return trans_one(program.alternate, state);
+      } else {
+        // no else specified
+        return [{ program: null, state }];
+      }
+    }
   }
 }
+
+// "synonyms"
+trans.Program = trans.BlockStatement;
 
 // ------------------------------------------------------------------------
 

@@ -5,6 +5,8 @@
 //     }
 //   });
 
-GoTo({location: "l2"});
-GoTo({location: "l3"});
-GoTo({location: "l4"});
+if (state.location == "l1") {
+  GoTo({location: "l2"});
+} else {
+  GoTo({location: "l3"});
+}
