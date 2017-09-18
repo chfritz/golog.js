@@ -116,13 +116,22 @@ const trans = {
 
   ExpressionStatement(program, state) {
     console.log("EXPRESSION", program.expression);
-    return trans[program.expression.type](program, state);
+    return trans[program.expression.type](program.expression, state);
   },
+
+  // ------------------------------------------------------------------------
 
   /** an invocation */
   CallExpression(program, state) {
-    // console.log("CALL", program);
+    console.log("CALL", program);
+
+    if (program.callee && trans[program.callee.name]) {
+      // a known construct (not an action)
+      return trans[program.callee.name](program, state);
+    }
+
     // reconstruct the action and instantiate
+    console.log("construct action", program.callee.name);
     const action = eval("new actions." + escodegen.generate(program));
 
     if (action.isPossible(state)) {
@@ -132,6 +141,15 @@ const trans = {
       return []; // i.e., no transition possible
     }
   },
+
+  or(program, state) {
+    console.log("OR", program.arguments);
+    return _.reduce(program.arguments[0].elements, (memo, p) => {
+          return memo.concat(trans_one(p, state));
+        }, []);
+  },
+
+  // ------------------------------------------------------------------------
 
   /** if-then-else */
   IfStatement(program, state) {
