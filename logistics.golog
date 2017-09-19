@@ -12,6 +12,13 @@
 // }
 
 // state.location != 'l2';
-or([GoTo({location: "l3"}),
-    GoTo({location: "l2"})]);
-state.location != 'l3';
+
+
+
+plan(() => {
+  or([
+      () => GoTo({location: "l3"}),
+      () => GoTo({location: "l2"})
+    ]);
+  state.location != 'l3';
+});

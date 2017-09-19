@@ -23,12 +23,39 @@ function run(program, state) {
       return {success: false, state};
     } else {
       // online: always take first-best execution path
+      if (result[0].plan && result[0].plan.length > 0) {
+        _.each(result[0].plan, (a) => {
+            a.execute();
+          });
+      }
       return run(result[0].program, result[0].state);
     }
   } else {
     return {success: true, state};
   }
 }
+
+function plan(program, state, prefix = []) {
+  if (!isFinal(program, state)) {
+    const result = trans_one(program, state);
+    if (result.length == 0) {
+      return [];
+    } else {
+      // offline: try all (depth first for now); return when first plan found
+      for (let i = 0; i < result.length; i++) {
+        const r = result[i];
+        const sub = plan(r.program, r.state, prefix.concat(r.plan));
+        if (sub.length > 0) {
+          return sub;
+        }
+      }
+    }
+  } else {
+    // this is a successful branch
+    return [{program, state, plan: prefix}];
+  }
+}
+
 
 // ------------------------------------------------------------------------
 
@@ -80,9 +107,10 @@ final.Program = final.BlockStatement;
 /** perform one trans step */
 const trans_one = (program, state) => {
   if (!trans[program.type]) {
+    // console.log(program);
     throw new Error("TRANS: no case defined for " + program.type);
   }
-  console.log("TRANS_ONE", program);
+  // console.log("TRANS_ONE", program);
   return trans[program.type](program, state);
 }
 
@@ -109,21 +137,26 @@ const trans = {
         }
         return {
           program: programClone,
-          state: tuple.state
+          state: tuple.state,
+          plan: tuple.plan
         };
       });
   },
 
+  ArrowFunctionExpression(program, state) {
+    return trans_one(program.body, state);
+  },
+
   ExpressionStatement(program, state) {
-    console.log("EXPRESSION", program.expression);
-    return trans[program.expression.type](program.expression, state);
+    // console.log("EXPRESSION", program.expression);
+    return trans_one(program.expression, state);
   },
 
   // ------------------------------------------------------------------------
 
   /** an invocation */
   CallExpression(program, state) {
-    console.log("CALL", program);
+    // console.log("CALL", program);
 
     if (program.callee && trans[program.callee.name]) {
       // a known construct (not an action)
@@ -131,12 +164,12 @@ const trans = {
     }
 
     // reconstruct the action and instantiate
-    console.log("construct action", program.callee.name);
+    // console.log("construct action", program.callee.name);
     const action = eval("new actions." + escodegen.generate(program));
 
     if (action.isPossible(state)) {
-      action.execute();
-      return [{ program: null, state: action.effect(state) }];
+      // action.execute();
+      return [{ program: null, state: action.effect(state), plan: [action] }];
     } else {
       return []; // i.e., no transition possible
     }
@@ -147,6 +180,13 @@ const trans = {
     return _.reduce(program.arguments[0].elements, (memo, p) => {
           return memo.concat(trans_one(p, state));
         }, []);
+  },
+
+  /** search until you find a plan that works, then execute it requires
+    changes in the action: evaluate all arguments in the current state
+    before adding to plan (return value) */
+  plan(program, state) {
+    return plan(program.arguments[0], state, []);
   },
 
   // ------------------------------------------------------------------------
