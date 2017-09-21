@@ -13,12 +13,12 @@
 
 // state.location != 'l2';
 
-
-
-plan(() => {
-  or([
-      () => GoTo({location: "l3"}),
-      () => GoTo({location: "l2"})
-    ]);
-  state.location != 'l3';
-});
+module.exports = () => {
+  plan(() => {
+      or([
+          () => GoTo({location: "l3"}),
+          () => GoTo({location: "l2"})
+          ]);
+      state.location != 'l3';
+    });
+}
