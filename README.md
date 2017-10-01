@@ -8,7 +8,7 @@ To learn more about Golog, please visit the [University of Toronto's Cognitive R
 
 Sample execution:
 ```sh
-node main.js logistics.golog
+node main.js
 ```
 
 ### Technical notes
@@ -24,3 +24,17 @@ All programs are syntactically correct JS programs as well -- but not executable
 as such, because GOLOG requires a different execution semantics than javascript.
 
 **This is work in progress and nowhere nearly finished.**
+
+
+### ToDo List
+
+- ~~waitFor (state changes)~~
+  - can be implemented as action
+- action return values
+- make actions async (but make them sync at the program execution layer)
+- concurrency
+- interrupts (\varphi -> \delta)
+- procedures
+- a new construct, "either", which is like a non-deterministic choice ("|"),
+  but both programs are executed and the construct is final once either of them is
+  final; to allow procedure overrides and timeouts

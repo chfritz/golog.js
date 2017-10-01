@@ -79,7 +79,43 @@ class GoTo extends Action {
   }
 }
 
+/** args.text = text to display */
+class AskYesNo extends Action {
+
+  isPossible() {
+    return true;
+  }
+
+  effect(state) {
+    return _.defaults({}, state);
+  }
+
+  execute() {
+    // for now we assume the users always says yes
+    console.log("asking yes/no: ", this._args.text);
+    return true;
+  }
+}
+
+/** args.text = text to display */
+class Say extends Action {
+
+  isPossible() {
+    return true;
+  }
+
+  effect(state) {
+    return _.defaults({}, state);
+  }
+
+  execute() {
+    // for now we assume the users always says yes
+    console.log("saying", this._args.text);
+  }
+}
 
 module.exports = {
-  GoTo
+  GoTo,
+  AskYesNo,
+  Say
 };
