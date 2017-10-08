@@ -1,4 +1,3 @@
-
 const _ = require('underscore');
 const escodegen = require('escodegen');
 const acorn = require('acorn');
@@ -10,39 +9,39 @@ const actions = require('./logistics.bat.js'); // TODO: make this unnecessary
 /**
  * Transition the given program one step, and return the resulting program and
  * state.
- * @param  {a parsed golog program} program to execute
- * @param  {[type]} state   the state to execute the program in
+ * @param {a parsed golog program} program to execute
+ * @param {[type]} state   the state to execute the program in
+ * @param {Function} callback
  * @return {{success: Boolean, state: State}} whether successful
  * and resulting state
 */
-function run(program, state) {
+function run(program, state, callback) {
   // console.log("RUN", program);
   if (!isFinal(program, state)) {
-    const result = trans_one(program, state, true);
-    // console.log(result);
-    if (result.length == 0) {
-      return {success: false, state};
-    } else {
-      // online: always take first-best execution path
-      // if (result[0].plan && result[0].plan.length > 0) {
-      //   _.each(result[0].plan, (a) => {
-      //       a.execute();
-      //     });
-      // }
-      return run(result[0].program, result[0].state);
-    }
+    trans_one(program, state, (err, result) => {
+        if (result.length == 0) {
+          callback({
+              msg: 'unable to complete program execution',
+              remaining: program
+            }, state);
+        } else {
+          return run(result.program, result.state, callback);
+        }
+      });
   } else {
-    return {success: true, state};
+    callback(null, {program, state});
   }
 }
 
+/** Create a plan for the given program, i.e., find a sequence of
+  actions that will allow us to complete the program */
 function plan(program, state, prefix = []) {
   if (!isFinal(program, state)) {
-    const result = trans_one(program, state, false);
+    const result = trans_one(program, state);
     if (result.length == 0) {
       return [];
     } else {
-      // offline: try all (depth first for now); return when first plan found
+      // try all (depth first for now); return when first plan found
       for (let i = 0; i < result.length; i++) {
         const r = result[i];
         const sub = plan(r.program, r.state, prefix.concat(r.plan));
@@ -65,13 +64,10 @@ function plan(program, state, prefix = []) {
 function evalExpression(expression, state) {
   walk.simple(expression, {
       Identifier(node) {
-        if (!_.isUndefined(state[node.name])) {
-          // node.name = state[node.name];
-          // hacky (because we don't change the node type) but works
-          // #HERE: fails for string values (works so far only for boolean values)
+        if (state.vars && !_.isUndefined(state.vars[node.name])) {
+          // create a new AST node for the new value so we can generate code for it
           const newParsed =
-            acorn.parse("\"" + state[node.name] + "\"").body[0].expression;
-          // console.log("IDENTIFIER", node, newParsed);
+            acorn.parse("\"" + state.vars[node.name] + "\"").body[0].expression;
           _.extend(node, newParsed);
         }
       }
@@ -131,34 +127,51 @@ final.Program = final.BlockStatement;
 
 // ------------------------------------------------------------------------
 
-/** perform one trans step */
-const trans_one = (program, state, online) => {
+/** perform one trans step.
+  If callback is given then this is done online, meaning actions will be
+  executed and the resulting program and state are returned in the callback.
+  Otherwise we are offline (planning) and will return all possible plans.
+*/
+const trans_one = (program, state, callback = undefined) => {
   if (!trans[program.type]) {
     console.log(program);
     throw new Error("TRANS: no case defined for " + program.type);
   }
   // console.log("TRANS_ONE", program);
-  return trans[program.type](program, state, online);
+  return trans[program.type](program, state, callback);
 }
 
 /** Transition functions for each programming construct.
+  @param callback function to call online when transition is completed
+  (mostly relevant for execution of durative actions)
   @return a list of possible future programs-state tuples.
 */
 const trans = {
 
   /** program is a block statement, e.g., the consequent of an If */
-  BlockStatement(program, state, online) {
+  BlockStatement(program, state, callback) {
     const first = program.body.shift();
 
     if (isFinal(first, state)) {
-      return trans_one(program, state, online);
+      return trans_one(program, state, callback);
     }
 
+    const callback2 = (callback ? (err, result) => {
+        const programClone = _.clone(program);
+        if (result.program != null) {
+          programClone.body.unshift(result.program);
+        }
+        callback(err, {
+          program: programClone,
+          state: result.state
+        });
+      } : null);
+
     // console.log("BlockStatement next:", first);
-    const result = trans_one(first, state, online);
+    const result = trans_one(first, state, callback2);
 
     return _.map(result, (tuple) => {
-        const programClone = program;
+        const programClone = _.clone(program);
         if (tuple.program != null) {
           programClone.body.unshift(tuple.program);
         }
@@ -170,24 +183,24 @@ const trans = {
       });
   },
 
-  ArrowFunctionExpression(program, state, online) {
-    return trans_one(program.body, state, online);
+  ArrowFunctionExpression(program, state, callback) {
+    return trans_one(program.body, state, callback);
   },
 
-  ExpressionStatement(program, state, online) {
+  ExpressionStatement(program, state, callback) {
     // console.log("EXPRESSION", program.expression);
-    return trans_one(program.expression, state, online);
+    return trans_one(program.expression, state, callback);
   },
 
   // ------------------------------------------------------------------------
 
   /** an invocation */
-  CallExpression(program, state, online) {
+  CallExpression(program, state, callback) {
     console.log("CALL", program);
 
     if (program.callee && trans[program.callee.name]) {
       // a known construct (not an action)
-      return trans[program.callee.name](program, state, online);
+      return trans[program.callee.name](program, state, callback);
     }
 
     // TODO: verify that it is an action (and not some malicious code)
@@ -203,47 +216,81 @@ const trans = {
     console.log("ACTION", action);
 
     if (action.isPossible(state)) {
-      if (online) {
-        const result = action.execute();
-        return [{ program: null, state, plan: [action], result }];
-      } else {
-        return [{ program: null, state: action.effect(state), plan: [action] }];
+      if (callback) {
+        // we are online, execute the action
+        action.on('result', (result) => {
+            if (result.success) {
+              // TODO update state
+              callback(null, { program: null, state, result: result.result });
+            } else {
+              callback({
+                  msg: 'action execution failed',
+                  action,
+                  program,
+                  state,
+                  error: result.error
+                }, null);
+            }
+          });
+        action.on('status', console.log);
+        action.on('feedback', console.log);
+        action.execute();
       }
+      return [{ program: null, state: action.effect(state), plan: [action] }];
     } else {
       return []; // i.e., no transition possible
     }
   },
 
-  or(program, state, online) {
+  or(program, state, callback) {
     console.log("OR", program.arguments);
-    return _.reduce(program.arguments[0].elements, (memo, p) => {
-          return memo.concat(trans_one(p, state, online));
+    if (callback) {
+      return trans_one(program.arguments[0].elements[0], state, callback);
+    } else {
+      // offline: consider all possibilities
+      return _.reduce(program.arguments[0].elements, (memo, p) => {
+          return memo.concat(trans_one(p, state, callback));
         }, []);
+    }
   },
 
   /** search until you find a plan that works, then execute it. requires
     changes in the action: evaluate all arguments in the current state
     before adding to plan (return value) */
-  plan(program, state, online) {
+  plan(program, state, callback) {
     const result = plan(program.arguments[0], state, []);
-    if (result[0].plan && result[0].plan.length > 0) {
-      _.each(result[0].plan, (a) => {
-          a.execute();
-        });
-      // TODO: update state
-      return [{ program: null, state, plan: [] }];
+
+    if (callback) {
+
+      if (result[0].plan && result[0].plan.length > 0) {
+        // execute the plan
+        _.each(result[0].plan, (a) => {
+            a.execute();
+            // TODO: make this a macro expansion, i.e., use regular trans_one
+            // in online mode to execute the returned plan
+          });
+        // TODO: update state
+        return [{ program: null, state, plan: [] }];
+      } else {
+        throw new Error('no plan found', 'no plan found');
+      }
+
+    } else {
+      // else: offline we just ignore the 'plan' construct, because we are
+      // already in planning mode.
+      return result;
     }
   },
 
   // ------------------------------------------------------------------------
 
   /** if-then-else */
-  IfStatement(program, state, online) {
+  IfStatement(program, state, callback) {
     if (evaluate(program.test, state)) {
-      return trans_one(program.consequent, state, online);
+      return trans_one(program.consequent, state, callback);
     } else {
       if (program.alternate) {
-        return trans_one(program.alternate, state, online);
+        return trans_one(program.alternate, state, callback);
       } else {
         // no else specified
         return [{ program: null, state }];
@@ -252,7 +299,7 @@ const trans = {
   },
 
   /** a test */
-  BinaryExpression(program, state, online) {
+  BinaryExpression(program, state, callback) {
     const condition = evaluate(program, state);
     if (condition) {
       return [{ program: null, state }];
@@ -261,14 +308,27 @@ const trans = {
     }
   },
 
-  VariableDeclaration(program, state, online) {
+  /** a variable declaration with init, e.g., `var answer = askYesNo();` */
+  VariableDeclaration(program, state, callback) {
     const declaration = program.declarations[0];
     // console.log(declaration.id, declaration.init);
-    const result = trans_one(declaration.init, state, online)[0];
-    // take the return value from the action and write it into the state
-    result.state[declaration.id.name] = result.result;
-    console.log("VAR", result);
-    return [result]
+    const results = trans_one(declaration.init, state, (err, result) => {
+        if (result) {
+          // take the return value from the action and write it into the state
+          result.state.var = result.state.var || {};
+          result.state.var[declaration.id.name] = result.result;
+          console.log("VAR", result);
+        }
+        return callback(err, result);
+      });
+    // offline case
+    // TODO: branch for each element in result
+    return _.map(results, (result) => {
+        result.state.var = result.state.var || {};
+        result.state.var[declaration.id.name] = result.result;
+        console.log("VAR", result);
+        return result;
+      });
   }
 
 }
@@ -279,6 +339,5 @@ trans.Program = trans.BlockStatement;
 // ------------------------------------------------------------------------
 
 module.exports = {
-  run,
-  isFinal
+  run
 };

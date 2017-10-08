@@ -1,4 +1,4 @@
-
+const EventEmitter = require('events').EventEmitter;
 const _ = require('underscore');
 
 // procedures({
@@ -53,13 +53,15 @@ function road(a, b) {
 // --------------------------------------------------------------------------
 // ---- Actions
 
-class Action {
+class Action extends EventEmitter {
   constructor(args) {
+    super();
     this._args = args;
   }
 
   execute() {
     console.log("EXECUTING", this.constructor.name, this._args);
+    this.emit('result', { success: true });
   }
 }
 
@@ -93,7 +95,7 @@ class AskYesNo extends Action {
   execute() {
     // for now we assume the users always says yes
     console.log("asking yes/no: ", this._args.text);
-    return true;
+    this.emit('result', { success: true, result: true });
   }
 }
 
@@ -111,6 +113,7 @@ class Say extends Action {
   execute() {
     // for now we assume the users always says yes
     console.log("saying", this._args.text);
+    this.emit('result', { success: true });
   }
 }
 
