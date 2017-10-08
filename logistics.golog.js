@@ -24,14 +24,14 @@ module.exports = () => {
   // state.location != 'l2';
 
   // ---- planning, non-determinism
-  plan(() => {
-      or([
-          () => GoTo({location: "l3"}),
-          () => GoTo({location: "l2"}),
-          () => GoTo({location: state.location})
-          ]);
-      state.location != 'l3';
-    });
+  // plan(() => {
+  //     or([
+  //         () => GoTo({location: "l3"}),
+  //         () => GoTo({location: "l2"}),
+  //         () => GoTo({location: state.location})
+  //         ]);
+  //     state.location != 'l3';
+  //   });
 
   // ---- action results
   // var happy = AskYesNo({ text: "Happy today?"});
@@ -40,6 +40,12 @@ module.exports = () => {
   // } else {
   //   Say({text: "no"});
   // }
+
+  // ---- concurrency
+  conc([
+      () => GoTo({location: "l3"}),
+      () => AskYesNo({ text: "Happy today?"})
+    ])
 }
 
 // -------------------------------------------------------------------------

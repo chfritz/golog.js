@@ -254,6 +254,22 @@ const trans = {
     }
   },
 
+  conc(program, state, callback) {
+    console.log("CONC", program.arguments);
+    if (callback) {
+      return _.map(program.arguments[0].elements, (sub) => {
+          trans_one(sub, state, callback);
+          // #HERE: no this won't work; will receive multiple callbacks;
+          // should I use promises?
+        });
+    } else {
+      // offline: find first option that works
+      // return _.reduce(program.arguments[0].elements, (memo, p) => {
+      //     return memo.concat(trans_one(p, state, callback));
+      //   }, []);
+    }
+  },
+
   /** search until you find a plan that works, then execute it. requires
     changes in the action: evaluate all arguments in the current state
     before adding to plan (return value) */
