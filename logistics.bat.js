@@ -59,11 +59,19 @@ class Action extends EventEmitter {
     this._args = args;
   }
 
+  isPossible() {
+    return true;
+  }
+
+  effect(state) {
+    return _.defaults({}, state);
+  }
+
   execute() {
     console.log("EXECUTING", this.constructor.name, this._args);
     setTimeout(() => {
         this.emit('result', { success: true });
-      }, 1);
+      }, 1000);
   }
 }
 
@@ -85,42 +93,25 @@ class GoTo extends Action {
 
 /** args.text = text to display */
 class AskYesNo extends Action {
-
-  isPossible() {
-    return true;
-  }
-
-  effect(state) {
-    return _.defaults({}, state);
-  }
-
-  // execute() {
-  //   // for now we assume the users always says yes
-  //   console.log("asking yes/no: ", this._args.text);
-  //   this.emit('result', { success: true, result: true });
-  // }
 }
 
 /** args.text = text to display */
 class Say extends Action {
+}
 
-  isPossible() {
-    return true;
-  }
-
-  effect(state) {
-    return _.defaults({}, state);
-  }
-
+/** sleep for args.time ms */
+class Sleep extends Action {
   execute() {
-    // for now we assume the users always says yes
-    console.log("saying", this._args.text);
-    this.emit('result', { success: true });
+    console.log("sleeping", this._args);
+    setTimeout(() => {
+        this.emit('result', { success: true, result: true });
+      }, this._args.time);
   }
 }
 
 module.exports = {
   GoTo,
   AskYesNo,
-  Say
+  Say,
+  Sleep
 };

@@ -138,6 +138,14 @@ const final = {
     });
   },
 
+  /** either is final when any sub-program is final */
+  either(program, state) {
+    const array = program.arguments[0].elements;
+    return _.some(array, (sub) => {
+        return isFinal(sub, state);
+    });
+  },
+
   /** marker to designate not final */
   blocker(program, state) {
     return false;
@@ -290,10 +298,12 @@ const trans = {
     if (callback) {
       const array = program.arguments[0].elements;
       _.each(array, (sub, index) => {
-          array[index] = {type: 'blocker'};
           if (isFinal(sub, state)) {
+            // mark this thread as done
             array[index] = {type: 'done'};
           } else {
+            // mark this thread as blocked, while we execute the first step of it
+            array[index] = {type: 'blocker'};
             trans_one(sub, state, (err, result) => {
                 array[index] = result.program;
                 callback(null, {
@@ -302,17 +312,37 @@ const trans = {
                   });
               });
           }
-          // #HERE: no this won't work; can't continue thread one without
-          // action in thread two completing first, etc.
-          // should I use promises?
-          //
-          // each thread needs to update the sub-program, putting a "wait" at
-          // the beginning (as a blocker); then when a callback comes back we
-          // can remove the blocker from the current thread, and return (in
-          // callback) the updated CONC program (where now all threads are
-          // blocking except the one that just returned); this will actually
-          // also take care of the eventual "join" (waiting on all threads to
-          // complete)
+        });
+    } else {
+      throw new Error('not yet implemented', 'not yet implemented');
+      // offline: find first option that works
+      // return _.reduce(program.arguments[0].elements, (memo, p) => {
+      //     return memo.concat(trans_one(p, state, callback));
+      //   }, []);
+    }
+  },
+
+  /** trans semantics is exactly the same as conc, only final is
+    different */
+  either(program, state, callback) {
+    console.log("EITHER", program.arguments);
+    if (callback) {
+      const array = program.arguments[0].elements;
+      _.each(array, (sub, index) => {
+          if (isFinal(sub, state)) {
+            // mark this thread as done
+            array[index] = {type: 'done'};
+          } else {
+            // mark this thread as blocked, while we execute the first step of it
+            array[index] = {type: 'blocker'};
+            trans_one(sub, state, (err, result) => {
+                array[index] = result.program;
+                callback(null, {
+                    program,
+                    state: result.state
+                  });
+              });
+          }
         });
     } else {
       throw new Error('not yet implemented', 'not yet implemented');

@@ -42,9 +42,16 @@ module.exports = () => {
   // }
 
   // ---- concurrency
-  conc([
+  // conc([
+  //     () => { GoTo({location: "l3"}); GoTo({location: "l2"})},
+  //     () => { AskYesNo({ text: "Happy today?"}) }
+  //   ]);
+  // GoTo({location: "l4"});
+
+  // ---- either
+  either([
       () => { GoTo({location: "l3"}); GoTo({location: "l2"})},
-      () => { AskYesNo({ text: "Happy today?"}) }
+      () => { Sleep({time: 10}); }
     ]);
   GoTo({location: "l4"});
 }
