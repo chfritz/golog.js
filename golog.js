@@ -29,7 +29,7 @@ function run(program, state, callback) {
         }
       });
   } else {
-    callback(null, {program, state});
+    callback && callback(null, {program, state});
   }
 }
 
@@ -90,7 +90,7 @@ function evaluate(expression, state) {
   * @return {Boolean}
 */
 function isFinal(program, state) {
-  // console.log("isFinal", program, state);
+  console.log("isFinal", program, state);
   return (final[program.type] && final[program.type](program, state));
 }
 
@@ -119,6 +119,33 @@ const final = {
 
   BinaryExpression(program, state) {
     return evaluate(program, state);
+  },
+
+  CallExpression(program, state) {
+    if (program.callee && final[program.callee.name]) {
+      // a known construct (not an action)
+      return final[program.callee.name](program, state);
+    } else {
+      return false;
+    }
+  },
+
+  /** conc(urrency) is final when all sub-programs are final */
+  conc(program, state) {
+    const array = program.arguments[0].elements;
+    return _.every(array, (sub) => {
+        return isFinal(sub, state);
+    });
+  },
+
+  /** marker to designate not final */
+  blocker(program, state) {
+    return false;
+  },
+
+  /** marker to designate final */
+  done(program, state) {
+    return true;
   }
 }
 
@@ -215,30 +242,34 @@ const trans = {
     const action = eval("new actions." + escodegen.generate(program));
     console.log("ACTION", action);
 
-    if (action.isPossible(state)) {
-      if (callback) {
-        // we are online, execute the action
-        action.on('result', (result) => {
-            if (result.success) {
-              // TODO update state
-              callback(null, { program: null, state, result: result.result });
-            } else {
-              callback({
-                  msg: 'action execution failed',
-                  action,
-                  program,
-                  state,
-                  error: result.error
-                }, null);
-            }
-          });
-        action.on('status', console.log);
-        action.on('feedback', console.log);
-        action.execute();
-      }
+    if (callback) {
+      // we are online, execute the action
+      action.on('result', (result) => {
+          if (result.success) {
+            // TODO update state
+            callback(null, { program: null, state, result: result.result });
+          } else {
+            callback({
+                msg: 'action execution failed',
+                action,
+                program,
+                state,
+                error: result.error
+              }, null);
+          }
+        });
+      action.on('status', console.log);
+      action.on('feedback', console.log);
+      action.execute();
       return [{ program: null, state: action.effect(state), plan: [action] }];
     } else {
-      return []; // i.e., no transition possible
+      // offline: check preconditions
+      if (action.isPossible(state)) {
+        // then compute effect
+        return [{ program: null, state: action.effect(state), plan: [action] }];
+      } else {
+        return []; // i.e., no transition possible
+      }
     }
   },
 
@@ -257,12 +288,34 @@ const trans = {
   conc(program, state, callback) {
     console.log("CONC", program.arguments);
     if (callback) {
-      return _.map(program.arguments[0].elements, (sub) => {
-          trans_one(sub, state, callback);
-          // #HERE: no this won't work; will receive multiple callbacks;
+      const array = program.arguments[0].elements;
+      _.each(array, (sub, index) => {
+          array[index] = {type: 'blocker'};
+          if (isFinal(sub, state)) {
+            array[index] = {type: 'done'};
+          } else {
+            trans_one(sub, state, (err, result) => {
+                array[index] = result.program;
+                callback(null, {
+                    program,
+                    state: result.state
+                  });
+              });
+          }
+          // #HERE: no this won't work; can't continue thread one without
+          // action in thread two completing first, etc.
           // should I use promises?
+          //
+          // each thread needs to update the sub-program, putting a "wait" at
+          // the beginning (as a blocker); then when a callback comes back we
+          // can remove the blocker from the current thread, and return (in
+          // callback) the updated CONC program (where now all threads are
+          // blocking except the one that just returned); this will actually
+          // also take care of the eventual "join" (waiting on all threads to
+          // complete)
         });
     } else {
+      throw new Error('not yet implemented', 'not yet implemented');
       // offline: find first option that works
       // return _.reduce(program.arguments[0].elements, (memo, p) => {
       //     return memo.concat(trans_one(p, state, callback));
@@ -345,8 +398,13 @@ const trans = {
         console.log("VAR", result);
         return result;
       });
-  }
+  },
 
+  /** used in conc to block a thread */
+  blocker(program, state, callback) {
+    return [];
+    // yes, we are *not* calling the callback;
+  }
 }
 
 // "synonyms"

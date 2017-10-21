@@ -15,7 +15,7 @@
 
 module.exports = () => {
 
-  // if-then-else
+  // --- if-then-else
   // if (state.location == "l1") {
   //   GoTo({location: "l2"});
   // } else {
@@ -43,9 +43,10 @@ module.exports = () => {
 
   // ---- concurrency
   conc([
-      () => GoTo({location: "l3"}),
-      () => AskYesNo({ text: "Happy today?"})
-    ])
+      () => { GoTo({location: "l3"}); GoTo({location: "l2"})},
+      () => { AskYesNo({ text: "Happy today?"}) }
+    ]);
+  GoTo({location: "l4"});
 }
 
 // -------------------------------------------------------------------------

@@ -61,7 +61,9 @@ class Action extends EventEmitter {
 
   execute() {
     console.log("EXECUTING", this.constructor.name, this._args);
-    this.emit('result', { success: true });
+    setTimeout(() => {
+        this.emit('result', { success: true });
+      }, 1);
   }
 }
 
@@ -92,11 +94,11 @@ class AskYesNo extends Action {
     return _.defaults({}, state);
   }
 
-  execute() {
-    // for now we assume the users always says yes
-    console.log("asking yes/no: ", this._args.text);
-    this.emit('result', { success: true, result: true });
-  }
+  // execute() {
+  //   // for now we assume the users always says yes
+  //   console.log("asking yes/no: ", this._args.text);
+  //   this.emit('result', { success: true, result: true });
+  // }
 }
 
 /** args.text = text to display */

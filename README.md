@@ -32,6 +32,7 @@ as such, because GOLOG requires a different execution semantics than javascript.
 - [x] action return values
 - [ ] make actions async (but make them sync at the program execution layer)
 - [ ] concurrency
+  - use Promises? use Promise.race? https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/race
 - [ ] interrupts (\varphi -> \delta)
 - [ ] procedures
 - [ ] a new construct, "either", which is like a non-deterministic choice ("|"),
