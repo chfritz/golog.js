@@ -6,6 +6,11 @@ const actions = require('./logistics.bat.js'); // TODO: make this unnecessary
 
 // ------------------------------------------------------------------------
 
+function parseAndRun(code, state, callback) {
+  const program = acorn.parse(code);
+  return run(program, state, callback);
+}
+
 /**
  * Transition the given program one step, and return the resulting program and
  * state.
@@ -90,7 +95,7 @@ function evaluate(expression, state) {
   * @return {Boolean}
 */
 function isFinal(program, state) {
-  console.log("isFinal", program, state);
+  // console.log("isFinal", program, state);
   return (final[program.type] && final[program.type](program, state));
 }
 
@@ -231,7 +236,7 @@ const trans = {
 
   /** an invocation */
   CallExpression(program, state, callback) {
-    console.log("CALL", program);
+    // console.log("CALL", program);
 
     if (program.callee && trans[program.callee.name]) {
       // a known construct (not an action)
@@ -245,10 +250,10 @@ const trans = {
 
     // It's an action
     evalExpression(program, state);
-    console.log("ACTION", program);
+    // console.log("ACTION", program);
 
     const action = eval("new actions." + escodegen.generate(program));
-    console.log("ACTION", action);
+    // console.log("ACTION", action);
 
     if (callback) {
       // we are online, execute the action
@@ -294,7 +299,7 @@ const trans = {
   },
 
   conc(program, state, callback) {
-    console.log("CONC", program.arguments);
+    // console.log("CONC", program.arguments);
     if (callback) {
       const array = program.arguments[0].elements;
       _.each(array, (sub, index) => {
@@ -325,7 +330,7 @@ const trans = {
   /** trans semantics is exactly the same as conc, only final is
     different */
   either(program, state, callback) {
-    console.log("EITHER", program.arguments);
+    // console.log("EITHER", program.arguments);
     if (callback) {
       const array = program.arguments[0].elements;
       _.each(array, (sub, index) => {
@@ -443,5 +448,6 @@ trans.Program = trans.BlockStatement;
 // ------------------------------------------------------------------------
 
 module.exports = {
-  run
+  run,
+  parseAndRun
 };

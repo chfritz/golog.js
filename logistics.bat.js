@@ -53,6 +53,8 @@ function road(a, b) {
 // --------------------------------------------------------------------------
 // ---- Actions
 
+const history = [];
+
 class Action extends EventEmitter {
   constructor(args) {
     super();
@@ -69,6 +71,7 @@ class Action extends EventEmitter {
 
   execute() {
     console.log("EXECUTING", this.constructor.name, this._args);
+    history.push({name: this.constructor.name, args: this._args});
     setTimeout(() => {
         this.emit('result', { success: true });
       }, 1000);
@@ -109,9 +112,14 @@ class Sleep extends Action {
   }
 }
 
+class A extends Action {
+}
+
 module.exports = {
   GoTo,
   AskYesNo,
   Say,
-  Sleep
+  Sleep,
+  A,
+  history
 };
