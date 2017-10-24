@@ -1,5 +1,6 @@
-const EventEmitter = require('events').EventEmitter;
 const _ = require('underscore');
+
+const bat = require('./bat.js');
 
 // procedures({
 //     // goToFloor: {
@@ -53,33 +54,8 @@ function road(a, b) {
 // --------------------------------------------------------------------------
 // ---- Actions
 
-const history = [];
-
-class Action extends EventEmitter {
-  constructor(args) {
-    super();
-    this._args = args;
-  }
-
-  isPossible() {
-    return true;
-  }
-
-  effect(state) {
-    return _.defaults({}, state);
-  }
-
-  execute() {
-    console.log("EXECUTING", this.constructor.name, this._args);
-    history.push({name: this.constructor.name, args: this._args});
-    setTimeout(() => {
-        this.emit('result', { success: true });
-      }, 1000);
-  }
-}
-
 /** args.location = where to go */
-class GoTo extends Action {
+class GoTo extends bat.Action {
 
   /** possible when there is a road from the current location to the
     destination */
@@ -94,32 +70,9 @@ class GoTo extends Action {
   }
 }
 
-/** args.text = text to display */
-class AskYesNo extends Action {
-}
-
-/** args.text = text to display */
-class Say extends Action {
-}
-
-/** sleep for args.time ms */
-class Sleep extends Action {
-  execute() {
-    console.log("sleeping", this._args);
-    setTimeout(() => {
-        this.emit('result', { success: true, result: true });
-      }, this._args.time);
-  }
-}
-
-class A extends Action {
-}
 
 module.exports = {
   GoTo,
-  AskYesNo,
-  Say,
-  Sleep,
-  A,
-  history
+  Sleep: bat.Sleep,
+  Action: bat.Action
 };

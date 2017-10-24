@@ -9,18 +9,18 @@ describe('Semantics', function() {
 
             const program = () => {
               either([
-                  () => { A({id: 1}); A({id: 2}); },
+                  () => { Action({id: 1}); Action({id: 2}); },
                   () => { Sleep({time: 10}); }
                 ]);
-              A({id: 3});
+              Action({id: 3});
             }
 
             Golog.parseAndRun(program.toString(), { location: 'l1' }, () => {
                 assert.equal([
-                    {name: "A", args: {id: 1}},
-                    {name: "A", args: {id: 3}}
+                    {name: "Action", args: {id: 1}},
+                    {name: "Action", args: {id: 3}}
                   ],
-                  actions.history);
+                  actions.Action.history);
               });
           });
       });
