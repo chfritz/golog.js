@@ -17,10 +17,12 @@ class Action extends EventEmitter {
 
   execute() {
     // console.log("EXECUTING", this.constructor.name, this._args);
+    // console.log("start", this);
     Action.history.push({name: this.constructor.name, args: this._args});
     setTimeout(() => {
         this.emit('result', { success: true });
-      }, 1000);
+        // console.log("done", this);
+      }, 100);
   }
 }
 
