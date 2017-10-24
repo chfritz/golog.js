@@ -15,14 +15,6 @@
 
 module.exports = () => {
 
-  // --- if-then-else
-  // if (state.location == "l1") {
-  //   GoTo({location: "l2"});
-  // } else {
-  //   GoTo({location: "l3"});
-  // }
-  // state.location != 'l2';
-
   // ---- planning, non-determinism
   // plan(() => {
   //     or([
@@ -47,13 +39,6 @@ module.exports = () => {
   //     () => { AskYesNo({ text: "Happy today?"}) }
   //   ]);
   // GoTo({location: "l4"});
-
-  // ---- either
-  either([
-      () => { GoTo({location: "l3"}); GoTo({location: "l2"})},
-      () => { Sleep({time: 10}); }
-    ]);
-  GoTo({location: "l4"});
 }
 
 // -------------------------------------------------------------------------

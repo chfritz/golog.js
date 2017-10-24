@@ -16,7 +16,7 @@ class Action extends EventEmitter {
   }
 
   execute() {
-    console.log("EXECUTING", this.constructor.name, this._args);
+    // console.log("EXECUTING", this.constructor.name, this._args);
     Action.history.push({name: this.constructor.name, args: this._args});
     setTimeout(() => {
         this.emit('result', { success: true });
@@ -29,7 +29,7 @@ Action.history = [];
 /** sleep for args.time ms */
 class Sleep extends Action {
   execute() {
-    console.log("sleeping", this._args);
+    // console.log("sleeping", this._args);
     setTimeout(() => {
         this.emit('result', { success: true, result: true });
       }, this._args.time);
