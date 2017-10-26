@@ -341,11 +341,16 @@ const trans = {
             // mark this thread as blocked, while we execute the first step of it
             array[index] = {type: 'blocker'};
             trans_one(sub, state, (err, result) => {
-                array[index] = result.program;
-                callback(null, {
-                    program,
-                    state: result.state
-                  });
+                const done = isFinal(program, state);
+                if (!done) {
+                  // only call back if no other thread has already completed
+                  array[index] = result.program;
+                  // TODO: also merge the resulting states
+                  callback(null, {
+                      program,
+                      state: result.state
+                    });
+                }
               });
           }
         });

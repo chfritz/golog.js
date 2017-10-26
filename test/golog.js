@@ -103,4 +103,9 @@ describe('Semantics', function() {
               });
           });
       });
+
+
+    // TODO: check about variables assigned in threads. And test the case where
+    // the isFinal-ness of a thread depends on the variables assigned in that
+    // state.
   });
