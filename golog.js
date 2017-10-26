@@ -69,6 +69,7 @@ function plan(program, state, prefix = []) {
 function evalExpression(expression, state) {
   walk.simple(expression, {
       Identifier(node) {
+        // console.log("Identifier:", node, state);
         if (state.vars && !_.isUndefined(state.vars[node.name])) {
           // create a new AST node for the new value so we can generate code for it
           const newParsed =
@@ -82,6 +83,7 @@ function evalExpression(expression, state) {
 /** evaluate the expression in the given state; uses evalExpression. */
 function evaluate(expression, state) {
   evalExpression(expression, state);
+  // console.log("expression:", expression);
   return eval(escodegen.generate(expression));
 }
 
@@ -287,7 +289,7 @@ const trans = {
   },
 
   or(program, state, callback) {
-    console.log("OR", program.arguments);
+    // console.log("OR", program.arguments);
     if (callback) {
       return trans_one(program.arguments[0].elements[0], state, callback);
     } else {
@@ -327,8 +329,8 @@ const trans = {
     }
   },
 
-  /** trans semantics is exactly the same as conc, only final is
-    different */
+  /** trans semantics is almost the same as conc, only termination and final
+    are different */
   either(program, state, callback) {
     // console.log("EITHER", program.arguments);
     if (callback) {
@@ -341,11 +343,14 @@ const trans = {
             // mark this thread as blocked, while we execute the first step of it
             array[index] = {type: 'blocker'};
             trans_one(sub, state, (err, result) => {
-                const done = isFinal(program, state);
+                const done = _.find(array, (p) => (p.type == 'done'));
                 if (!done) {
                   // only call back if no other thread has already completed
-                  array[index] = result.program;
-                  // TODO: also merge the resulting states
+                  if (isFinal(result.program, result.state)) {
+                    array[index] = {type: 'done'};
+                  } else {
+                    array[index] = result.program;
+                  }
                   callback(null, {
                       program,
                       state: result.state
@@ -424,18 +429,18 @@ const trans = {
     const results = trans_one(declaration.init, state, (err, result) => {
         if (result) {
           // take the return value from the action and write it into the state
-          result.state.var = result.state.var || {};
-          result.state.var[declaration.id.name] = result.result;
-          console.log("VAR", result);
+          result.state.vars = result.state.vars || {};
+          result.state.vars[declaration.id.name] = result.result;
+          // console.log("VAR", result);
         }
         return callback(err, result);
       });
     // offline case
     // TODO: branch for each element in result
     return _.map(results, (result) => {
-        result.state.var = result.state.var || {};
-        result.state.var[declaration.id.name] = result.result;
-        console.log("VAR", result);
+        result.state.vars = result.state.vars || {};
+        result.state.vars[declaration.id.name] = result.result;
+        // console.log("VAR", result);
         return result;
       });
   },

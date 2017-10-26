@@ -38,7 +38,16 @@ class Sleep extends Action {
   }
 }
 
+class Identity extends Action {
+  execute() {
+    setTimeout(() => {
+        this.emit('result', { success: true, result: this._args.value });
+      }, 1);
+  }
+}
+
 module.exports = {
   Action,
-  Sleep
+  Sleep,
+  Identity
 };

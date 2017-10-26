@@ -83,7 +83,7 @@ describe('Semantics', function() {
 
 
     describe('either', function() {
-        it('should terminate other threads when first finishes', function(done) {
+        it('should not continue other threads when first one finishes', function(done) {
 
             const program = () => {
               either([
@@ -102,10 +102,32 @@ describe('Semantics', function() {
                 done();
               });
           });
+
+        it('state is preserved within each thread', function(done) {
+            const program = () => {
+              either([
+                  () => {
+                    var x = Identity({value: 1});
+                    if (x != 1) {
+                      Action({msg: `this shouldn't happen`});
+                    }
+                  },
+                  () => { Action({id: 1}); Action({id: 2}); }
+                ]);
+              Action({id: 3});
+            }
+
+            Golog.parseAndRun(program.toString(), { location: 'l1' }, () => {
+                assert.deepEqual([
+                    {name: "Action", args: {id: 1}},
+                    {name: "Action", args: {id: 3}}
+                  ],
+                  actions.Action.history);
+                done();
+              });
+          });
+
       });
 
 
-    // TODO: check about variables assigned in threads. And test the case where
-    // the isFinal-ness of a thread depends on the variables assigned in that
-    // state.
   });

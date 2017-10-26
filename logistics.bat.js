@@ -74,5 +74,6 @@ class GoTo extends bat.Action {
 module.exports = {
   GoTo,
   Sleep: bat.Sleep,
-  Action: bat.Action
+  Action: bat.Action,
+  Identity: bat.Identity
 };
