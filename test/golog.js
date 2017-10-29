@@ -9,16 +9,21 @@ describe('Semantics', function() {
         actions.Action.history = [];
       });
 
-    describe('assert', function(done) {
-        it('true', function() {
-            const program = () => {
-              state.location != 'l2';
-            };
+    describe('assert', function() {
+        const program = () => {
+          state.location != 'l2';
+        };
 
-            Golog.parseAndRun(program.toString(), { location: 'l1' }, () => {
-                // #HERE: what should happen when it is not true?
-                //
-                assert.deepEqual([], actions.Action.history);
+        it('true', function(done) {
+            Golog.parseAndRun(program.toString(), { location: 'l1' }, (e,r) => {
+                assert.isNull(e);
+                done();
+              });
+          });
+
+        it('false', function(done) {
+            Golog.parseAndRun(program.toString(), { location: 'l2' }, (e,r) => {
+                assert.isNotNull(e);
                 done();
               });
           });
@@ -67,7 +72,7 @@ describe('Semantics', function() {
               Action({id: 3});
             }
 
-            Golog.parseAndRun(program.toString(), { location: 'l1' }, () => {
+            Golog.parseAndRun(program.toString(), {}, () => {
                 assert.deepEqual([
                     {name: "Action", args: {id: 1.1}},
                     {name: "Action", args: {id: 2.1}},
@@ -93,7 +98,7 @@ describe('Semantics', function() {
               Action({id: 3});
             }
 
-            Golog.parseAndRun(program.toString(), { location: 'l1' }, () => {
+            Golog.parseAndRun(program.toString(), {}, () => {
                 assert.deepEqual([
                     {name: "Action", args: {id: 1}},
                     {name: "Action", args: {id: 3}}
@@ -117,7 +122,7 @@ describe('Semantics', function() {
               Action({id: 3});
             }
 
-            Golog.parseAndRun(program.toString(), { location: 'l1' }, () => {
+            Golog.parseAndRun(program.toString(), {}, () => {
                 assert.deepEqual([
                     {name: "Action", args: {id: 1}},
                     {name: "Action", args: {id: 3}}
@@ -132,7 +137,7 @@ describe('Semantics', function() {
 
     // ---- planning, non-determinism
     describe('planning', function() {
-        it('should backtrack to when necessary to finish program', function(done) {
+        it('should backtrack when necessary to finish program', function(done) {
 
             const program = () => {
               plan(() => {
@@ -140,7 +145,7 @@ describe('Semantics', function() {
                       () => GoTo({location: "l3"}),
                       () => GoTo({location: "l2"}),
                       () => GoTo({location: state.location})
-                      ]);
+                    ]);
                   state.location != 'l3';
                 });
             };

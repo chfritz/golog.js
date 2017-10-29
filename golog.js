@@ -24,11 +24,14 @@ function run(program, state, callback) {
   // console.log("RUN", program);
   if (!isFinal(program, state)) {
     trans_one(program, state, (err, result) => {
-        if (result.length == 0) {
+        if (err) {
+          // console.log("error", err);
           callback({
               msg: 'unable to complete program execution',
-              remaining: program
-            }, state);
+              remaining: program,
+              state,
+              error: err
+            }, null);
         } else {
           return run(result.program, result.state, callback);
         }
@@ -230,14 +233,18 @@ const trans = {
     }
 
     const callback2 = (callback ? (err, result) => {
-        const programClone = _.clone(program);
-        if (result.program != null) {
-          programClone.body.unshift(result.program);
+        if (err) {
+          callback(err, result);
+        } else {
+          const programClone = _.clone(program);
+          if (result.program != null) {
+            programClone.body.unshift(result.program);
+          }
+          callback(null, {
+              program: programClone,
+              state: result.state
+            });
         }
-        callback(err, {
-          program: programClone,
-          state: result.state
-        });
       } : null);
 
     // console.log("BlockStatement next:", first);
@@ -447,10 +454,22 @@ const trans = {
   /** a test */
   BinaryExpression(program, state, callback) {
     const condition = evaluate(program, state);
-    if (condition) {
-      return [{ program: null, state }];
+    if (callback) {
+      if (condition) {
+        callback(null, { program: null, state });
+      } else {
+        callback({
+            msg: 'assertion failed',
+            program,
+            state
+          }, null);
+      }
     } else {
-      return [];
+      if (condition) {
+        return [{ program: null, state }];
+      } else {
+        return [];
+      }
     }
   },
 
