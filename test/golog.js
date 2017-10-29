@@ -219,6 +219,64 @@ describe('Semantics', function() {
 
           });
 
+        it('plan over if-s', function(done) {
+
+            const program = () => {
+              plan(() => {
+                  if (state.location != 'l1') {
+                    GoTo({location: "l1"});
+                  } else {
+                    GoTo({location: "l2"});
+                  }
+                });
+            };
+
+            Golog.parseAndRun(program.toString(), { location: 'l1' }, (err) => {
+                assert.isNull(err);
+                assert.deepEqual([
+                    {name: "GoTo", args: {location: "l2"}}
+                  ],
+                  actions.Action.history);
+
+                actions.Action.history = [];
+
+                Golog.parseAndRun(program.toString(), { location: 'l2' }, (err) => {
+                    assert.isNull(err);
+                    assert.deepEqual([
+                        {name: "GoTo", args: {location: "l1"}}
+                      ],
+                      actions.Action.history);
+                    done();
+                  });
+              });
+
+          });
+
+        it.skip('plan over concurrency', function(done) {
+            const program = () => {
+              plan(() => {
+                  conc([
+                      () => { Action({id: 1.1}); Action({id: 1.2}); },
+                      () => { Action({id: 2.1}); Action({id: 2.2}); }
+                    ]);
+                });
+              Action({id: 3});
+            }
+
+            Golog.parseAndRun(program.toString(), {}, () => {
+                assert.deepEqual([
+                    {name: "Action", args: {id: 1.1}},
+                    {name: "Action", args: {id: 2.1}},
+                    {name: "Action", args: {id: 1.2}},
+                    {name: "Action", args: {id: 2.2}},
+                    {name: "Action", args: {id: 3}}
+                  ],
+                  actions.Action.history);
+                done();
+              });
+          });
+
+        it.skip('plan over either', function(done) { });
       });
 
 

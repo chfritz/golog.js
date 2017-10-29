@@ -377,10 +377,9 @@ const trans = {
     } else {
       throw new Error('not yet implemented',
         'offline mode for conc not yet implemented');
-      // offline: find first option that works
-      // return _.reduce(program.arguments[0].elements, (memo, p) => {
-      //     return memo.concat(trans_one(p, state, callback));
-      //   }, []);
+      // offline: what should the semantics be? we can't just serialize
+      // the threads, because we'll want to execute them concurrently
+      // online later;
     }
   },
 
@@ -417,10 +416,7 @@ const trans = {
     } else {
       throw new Error('not yet implemented',
         'offline mode for "either" not yet implemented');
-      // offline: find first option that works
-      // return _.reduce(program.arguments[0].elements, (memo, p) => {
-      //     return memo.concat(trans_one(p, state, callback));
-      //   }, []);
+      // offline: find one sequence that works
     }
   },
 
