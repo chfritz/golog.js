@@ -197,6 +197,62 @@ describe('Semantics', function() {
                 done();
               });
 
-            });
-        });
+          });
+
+        it('plan over assertions', function(done) {
+
+            const program = () => {
+              plan(() => {
+                  state.location != 'l2';
+                  GoTo({location: "l2"});
+                });
+            };
+
+            Golog.parseAndRun(program.toString(), { location: 'l1' }, (err) => {
+                assert.isNull(err);
+                assert.deepEqual([
+                    {name: "GoTo", args: {location: "l2"}}
+                  ],
+                  actions.Action.history);
+                done();
+              });
+
+          });
+
+      });
+
+
+    describe('complex programs', function() {
+        it('combine programming and planning', function(done) {
+
+            const program = () => {
+              GoTo({location: "l3"});
+              plan(() => {
+                  or([
+                      () => GoTo({location: "l1"}),
+                      () => GoTo({location: "l2"}),
+                      () => GoTo({location: state.location})
+                    ]);
+                  state.location != 'l1';
+                  GoTo({location: "l1"});
+                });
+              GoTo({location: "l2"});
+            };
+
+            Golog.parseAndRun(program.toString(), { location: 'l1' }, (err) => {
+                assert.isNull(err);
+                assert.deepEqual([
+                    {name: "GoTo", args: {location: "l3"}},
+                    {name: "GoTo", args: {location: "l2"}},
+                    {name: "GoTo", args: {location: "l1"}},
+                    {name: "GoTo", args: {location: "l2"}}
+                  ],
+                  actions.Action.history);
+                done();
+              });
+
+          });
+      });
+
+
   });

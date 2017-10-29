@@ -99,12 +99,13 @@ function evaluate(expression, state) {
 
 /** execute the provided sequence of actions, and call callback when done */
 function executeActions(actions, state, callback) {
+  // console.log("executeActions", actions);
   const action = actions.shift();
   action.on('result', (result) => {
       if (result.success) {
         // TODO update state
         if (actions.length > 0) {
-          executeActions(actions, callback);
+          executeActions(actions, state, callback);
         } else {
           // we are done
           callback(null, {
@@ -138,13 +139,11 @@ function executeActions(actions, state, callback) {
   * @return {Boolean}
 */
 function isFinal(program, state) {
-  // console.log("isFinal", program, state);
   return (final[program.type] && final[program.type](program, state));
 }
 
 const final = {
   BlockStatement(program, state) {
-    // console.log("final BlockStatement", program, state);
     return (program.body.length == 0
       || _.every(program.body, (p) => {
           return isFinal(p, state)
@@ -165,8 +164,17 @@ const final = {
     }
   },
 
+  ArrowFunctionExpression(program, state, callback) {
+    return isFinal(program.body, state);
+  },
+
+  ExpressionStatement(program, state) {
+    return isFinal(program.expression, state);
+  },
+
   BinaryExpression(program, state) {
-    return evaluate(program, state);
+    const f = evaluate(program, state);
+    return f;
   },
 
   CallExpression(program, state) {
@@ -472,6 +480,7 @@ const trans = {
           }, null);
       }
     } else {
+      // #HERE: how and why do we even get here?
       if (condition) {
         return [{ program: null, state }];
       } else {

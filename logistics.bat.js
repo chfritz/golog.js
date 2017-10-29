@@ -23,20 +23,6 @@ const roads = {
   l2: {l3: 2, l4: 2}
 };
 
-/** complete the distance table */
-function completeRoads() {
-  _.each(roads, (dests, src) => {
-      _.each(dests, (distance, dest) => {
-          if (!roads[dest]) {
-            roads[dest] = {};
-          }
-          if (!roads[dest][src]) {
-            roads[dest][src] = distance;
-          }
-        });
-    });
-};
-
 /** there is a road from a to b */
 function road(a, b) {
   return (
@@ -46,10 +32,6 @@ function road(a, b) {
 }
 
 // const locations = ["l1", "l2", "l3", "l4"];
-//
-// const initialState = {
-//   location: "l1"
-// }
 
 // --------------------------------------------------------------------------
 // ---- Actions
@@ -71,9 +53,4 @@ class GoTo extends bat.Action {
 }
 
 
-module.exports = {
-  GoTo,
-  Sleep: bat.Sleep,
-  Action: bat.Action,
-  Identity: bat.Identity
-};
+module.exports = _.extend({GoTo}, bat);
