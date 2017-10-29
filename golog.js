@@ -87,6 +87,37 @@ function evaluate(expression, state) {
   return eval(escodegen.generate(expression));
 }
 
+/** execute the provided sequence of actions, and call callback when done */
+function executeActions(actions, state, callback) {
+  const action = actions.shift();
+  action.on('result', (result) => {
+      if (result.success) {
+        // TODO update state
+        if (actions.length > 0) {
+          executeActions(actions, callback);
+        } else {
+          // we are done
+          callback(null, {
+              program: null,
+              state: state,
+              result: result.result
+            });
+        }
+      } else {
+        // an error happened; abort sequence
+        callback({
+            msg: 'action execution failed',
+            action,
+            error: result.error
+          }, null);
+      }
+    });
+  action.on('status', console.log);
+  action.on('feedback', console.log);
+  action.execute();
+}
+
+
 
 // ------------------------------------------------------------------------
 
@@ -238,7 +269,7 @@ const trans = {
 
   /** an invocation */
   CallExpression(program, state, callback) {
-    // console.log("CALL", program);
+    // console.log("CALL", program, state);
 
     if (program.callee && trans[program.callee.name]) {
       // a known construct (not an action)
@@ -259,23 +290,24 @@ const trans = {
 
     if (callback) {
       // we are online, execute the action
-      action.on('result', (result) => {
-          if (result.success) {
-            // TODO update state
-            callback(null, { program: null, state, result: result.result });
-          } else {
-            callback({
-                msg: 'action execution failed',
-                action,
-                program,
-                state,
-                error: result.error
-              }, null);
-          }
-        });
-      action.on('status', console.log);
-      action.on('feedback', console.log);
-      action.execute();
+      // action.on('result', (result) => {
+      //     if (result.success) {
+      //       // TODO update state
+      //       callback(null, { program: null, state, result: result.result });
+      //     } else {
+      //       callback({
+      //           msg: 'action execution failed',
+      //           action,
+      //           program,
+      //           state,
+      //           error: result.error
+      //         }, null);
+      //     }
+      //   });
+      // action.on('status', console.log);
+      // action.on('feedback', console.log);
+      // action.execute();
+      executeActions([action], state, callback);
       return [{ program: null, state: action.effect(state), plan: [action] }];
     } else {
       // offline: check preconditions
@@ -321,7 +353,8 @@ const trans = {
           }
         });
     } else {
-      throw new Error('not yet implemented', 'not yet implemented');
+      throw new Error('not yet implemented',
+        'offline mode for conc not yet implemented');
       // offline: find first option that works
       // return _.reduce(program.arguments[0].elements, (memo, p) => {
       //     return memo.concat(trans_one(p, state, callback));
@@ -360,7 +393,8 @@ const trans = {
           }
         });
     } else {
-      throw new Error('not yet implemented', 'not yet implemented');
+      throw new Error('not yet implemented',
+        'offline mode for "either" not yet implemented');
       // offline: find first option that works
       // return _.reduce(program.arguments[0].elements, (memo, p) => {
       //     return memo.concat(trans_one(p, state, callback));
@@ -374,15 +408,13 @@ const trans = {
   plan(program, state, callback) {
     const result = plan(program.arguments[0], state, []);
 
+    // console.log("done planning", result[0].plan);
+
     if (callback) {
 
       if (result[0].plan && result[0].plan.length > 0) {
         // execute the plan
-        _.each(result[0].plan, (a) => {
-            a.execute();
-            // TODO: make this a macro expansion, i.e., use regular trans_one
-            // in online mode to execute the returned plan
-          });
+        executeActions(result[0].plan, state, callback);
         // TODO: update state
         return [{ program: null, state, plan: [] }];
       } else {
@@ -445,7 +477,8 @@ const trans = {
       });
   },
 
-  /** used in conc to block a thread */
+  /** used in conc to block a thread; works like a black hole: call gets in
+    but never out */
   blocker(program, state, callback) {
     return [];
     // yes, we are *not* calling the callback;

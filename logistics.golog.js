@@ -32,13 +32,6 @@ module.exports = () => {
   // } else {
   //   Say({text: "no"});
   // }
-
-  // ---- concurrency
-  // conc([
-  //     () => { GoTo({location: "l3"}); GoTo({location: "l2"})},
-  //     () => { AskYesNo({ text: "Happy today?"}) }
-  //   ]);
-  // GoTo({location: "l4"});
 }
 
 // -------------------------------------------------------------------------

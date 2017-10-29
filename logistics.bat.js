@@ -60,7 +60,7 @@ class GoTo extends bat.Action {
   /** possible when there is a road from the current location to the
     destination */
   isPossible(state) {
-    console.log(this.constructor.name, "(isPossible)", state, this._args);
+    // console.log(this.constructor.name, "(isPossible)", state, this._args);
     return (state.location != this._args.location &&
       road(state.location, this._args.location));
   }

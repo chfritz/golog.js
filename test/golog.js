@@ -130,4 +130,29 @@ describe('Semantics', function() {
       });
 
 
+    // ---- planning, non-determinism
+    describe('planning', function() {
+        it('should backtrack to when necessary to finish program', function(done) {
+
+            const program = () => {
+              plan(() => {
+                  or([
+                      () => GoTo({location: "l3"}),
+                      () => GoTo({location: "l2"}),
+                      () => GoTo({location: state.location})
+                      ]);
+                  state.location != 'l3';
+                });
+            };
+
+            Golog.parseAndRun(program.toString(), { location: 'l1' }, () => {
+                assert.deepEqual([
+                    {name: "GoTo", args: {location: "l2"}}
+                  ],
+                  actions.Action.history);
+                done();
+              });
+
+            });
+        });
   });

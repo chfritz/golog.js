@@ -37,3 +37,4 @@ as such, because GOLOG requires a different execution semantics than javascript.
 - [x] a new construct, "either", which is like a non-deterministic choice ("|"),
   but both programs are executed and the construct is final once either of them is
   final; to allow procedure overrides and timeouts
+- [ ] initialize Golog with actions (rather than importing them directly)
