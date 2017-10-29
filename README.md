@@ -1,4 +1,4 @@
-# golog.js (incomplete)
+# Golog.js (work in progress)
 
 A JavaScript implementation of the agent-programming language [GOLOG](http://bibbase.org/network/publication/levesque-reiter-lesprance-lin-scherl-gologalogicprogramminglanguagefordynamicdomains-1997)
 
@@ -6,9 +6,9 @@ Specifically, we use the transition semantics of [ConGolog](http://bibbase.org/n
 
 To learn more about Golog, please visit the [University of Toronto's Cognitive Robotics Groups' website](http://www.cs.toronto.edu/cogrobo/main/systems/index.html).
 
-Sample execution:
+To run the tests, which show examples of usage, do:
 ```sh
-node main.js
+npm test
 ```
 
 ### Technical notes
@@ -23,7 +23,7 @@ interpretation necessary. This is made possible by using JS syntax for programs.
 All programs are syntactically correct JS programs as well -- but not executable
 as such, because GOLOG requires a different execution semantics than javascript.
 
-**This is work in progress and nowhere nearly finished.**
+**This is work in progress and not yet finished.**
 
 
 ### ToDo List
@@ -37,4 +37,5 @@ as such, because GOLOG requires a different execution semantics than javascript.
 - [x] a new construct, "either", which is like a non-deterministic choice ("|"),
   but both programs are executed and the construct is final once either of them is
   final; to allow procedure overrides and timeouts
-- [ ] initialize Golog with actions (rather than importing them directly)
+- [x] initialize Golog with actions (rather than importing them directly)
+- [ ] make golog.js OO

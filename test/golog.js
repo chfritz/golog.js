@@ -1,9 +1,14 @@
 var assert = require('chai').assert;
 
-const actions = require('../bat.js');
+// const actions = require('../bat.js');
+const actions = require('../logistics.bat.js');
 const Golog = require('../golog.js');
 
 describe('Semantics', function() {
+
+    before(() => {
+        Golog.initialize({ actions });
+      });
 
     beforeEach(() => {
         actions.Action.history = [];
@@ -57,6 +62,40 @@ describe('Semantics', function() {
                   actions.Action.history);
                 done();
               });
+          });
+      });
+
+
+
+    // ---- action results
+    describe('action results', function() {
+        it('action results are available in the global scope', function(done) {
+
+            const program = () => {
+              var x = Identity({ value: 1 });
+              if (x == 1) {
+                Action({ id: 'right' });
+              } else {
+                Action({ id: 'wrong' });
+              }
+
+              if (x != 1) {
+                Action({ id: 'wrong' });
+              } else {
+                Action({ id: 'right' });
+              }
+            };
+
+            Golog.parseAndRun(program.toString(), {}, (error, result) => {
+                assert.isNull(error);
+                assert.deepEqual([
+                    {name: "Action", args: {id: 'right'}},
+                    {name: "Action", args: {id: 'right'}}
+                  ],
+                  actions.Action.history);
+                done();
+              });
+
           });
       });
 

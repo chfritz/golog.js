@@ -2,10 +2,17 @@ const _ = require('underscore');
 const escodegen = require('escodegen');
 const acorn = require('acorn');
 const walk = require("acorn/dist/walk");
-const actions = require('./logistics.bat.js'); // TODO: make this unnecessary
 
 // ------------------------------------------------------------------------
 
+let actions;
+
+/** set some options for running Golog programs */
+function initialize(options) {
+  actions = options.actions;
+}
+
+/** parse the code and run it starting in the given state */
 function parseAndRun(code, state, callback) {
   const program = acorn.parse(code);
   return run(program, state, callback);
@@ -511,5 +518,6 @@ trans.Program = trans.BlockStatement;
 
 module.exports = {
   run,
-  parseAndRun
+  parseAndRun,
+  initialize
 };
