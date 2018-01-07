@@ -32,8 +32,8 @@ as such, because GOLOG requires a different execution semantics than javascript.
 - [x] action return values
 - [x] make actions async (but make them sync at the program execution layer)
 - [x] concurrency
-- [ ] non-deterministic iteration (\delta^*)
-- [ ] interrupts (\varphi -> \delta)
+- [ ] non-deterministic iteration (δ*)
+- [ ] interrupts (φ → δ)
 - [ ] procedures
 - [x] a new construct, "either", which is like a non-deterministic choice ("|"),
   but both programs are executed and the construct is final once either of them is
